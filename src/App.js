@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import './App.css';
+import { FaFilePdf, FaFileWord, FaFileExcel, FaFileAlt } from 'react-icons/fa';
 
 function App() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (query.trim()) {
-      searchPolicies(query);
-    }
-  }, [query]);
+  const searchPolicies = async () => {
+    if (!query.trim()) return;
 
-  const searchPolicies = async (query) => {
     try {
       setLoading(true);
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/search';
+      const apiUrl = `${process.env.REACT_APP_API_URL}/search`;
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -28,10 +28,11 @@ function App() {
       }
 
       const data = await response.json();
-      setResults(data.results);
-      setLoading(false);
+      setResults(data.files || []);
+      setAnswer(data.answer || '');
     } catch (error) {
       console.error('Error searching policies:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -40,30 +41,77 @@ function App() {
     setQuery(e.target.value);
   };
 
+  const getFileIcon = (fileName) => {
+    const extension = fileName.split('.').pop().toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return <FaFilePdf className="file-icon" />;
+      case 'doc':
+      case 'docx':
+        return <FaFileWord className="file-icon" />;
+      case 'xls':
+      case 'xlsx':
+        return <FaFileExcel className="file-icon" />;
+      default:
+        return <FaFileAlt className="file-icon" />;
+    }
+  };
+
+  const getFileLabel = (fileName) => {
+    const extension = fileName.split('.').pop().toUpperCase();
+    return extension;
+  };
+
   return (
       <div className="App">
         <header className="App-header">
-          <h1>College Policy Search Engine</h1>
+          <h1>Tyr Search Engine</h1>
         </header>
         <main>
           <div className="search-container">
             <input
                 type="text"
-                placeholder="Search college policies..."
+                placeholder="Search Tyr..."
                 value={query}
                 onChange={handleSearchChange}
             />
+            <button onClick={searchPolicies} disabled={!query.trim()}>
+              {loading ? 'Searching...' : 'Search'}
+            </button>
           </div>
           {loading ? (
-              <p>Loading...</p>
+              <div className="spinner"></div>
           ) : (
-              results.map((result, index) => (
-                  <div key={index} className="policy-result">
-                    <h3>{result.title}</h3>
-                    <p>{result.description}</p>
-                    <a href={result.url} target="_blank" rel="noopener noreferrer">Read More</a>
-                  </div>
-              ))
+              <>
+            <textarea
+                value={answer}
+                readOnly
+                rows="10"
+                cols="50"
+                placeholder="The answer will appear here..."
+            />
+                {results.length > 0 ? (
+                    <div className="results-container">
+                      <h3>Related Files:</h3>
+                      <ul>
+                        {results.map((file, index) => (
+                            <li key={index}>
+                              <a
+                                  href={`${process.env.REACT_APP_API_URL}/download/${file}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                              >
+                                {getFileIcon(file)}
+                                {getFileLabel(file, index)}
+                              </a>
+                            </li>
+                        ))}
+                      </ul>
+                    </div>
+                ) : (
+                    <p>No results found.</p>
+                )}
+              </>
           )}
         </main>
       </div>

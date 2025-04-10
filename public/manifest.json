@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Tyr Search",
+  "name": "A simple Front/Backend search engine that pulls from an AI-Powered knowledge base.",
   "icons": [
     {
       "src": "favicon.ico",
